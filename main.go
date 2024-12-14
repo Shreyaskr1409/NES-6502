@@ -2,10 +2,10 @@ package main
 
 import (
 	"NES_Emulator/bus"
-	"NES_Emulator/olc6502"
+	"NES_Emulator/cpu6502"
 )
 
 func main() {
 	bus.NewBus()
-	olc6502.NewCpu()
+	cpu6502.NewCpu()
 }

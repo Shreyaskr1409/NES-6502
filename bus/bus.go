@@ -1,15 +1,15 @@
 package bus
 
-import "NES_Emulator/olc6502"
+import "NES_Emulator/cpu6502"
 
 type Bus struct {
-	*olc6502.Cpu
+	*cpu6502.Cpu
 	RAM [64 * 1024]byte
 }
 
 func NewBus() *Bus {
 	bus := &Bus{
-		Cpu: &olc6502.Cpu{},
+		Cpu: &cpu6502.Cpu{},
 	}
 	for i := range bus.RAM {
 		bus.RAM[i] = 0x00
