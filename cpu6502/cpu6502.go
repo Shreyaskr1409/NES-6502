@@ -12,7 +12,7 @@ type Cpu struct {
 	status uint8  // Status Register
 
 	// Internal CPU states
-	fetched  uint8
+	fetched  uint8 // data fetched on operation to be used later
 	addr_abs uint16
 	addr_rel uint16
 	opcode   uint8
