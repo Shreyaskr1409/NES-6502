@@ -10,14 +10,24 @@ func (cpu *Cpu) XXX() uint8 {
 	return 0
 }
 
-func (cpu *Cpu) ADC() uint8 {
-	// ADC implementation
-	return 0
+// Logical AND operation
+func (cpu *Cpu) AND() uint8 {
+	cpu.fetch()
+	cpu.a = cpu.a & cpu.fetched
+	cpu.setFlag(Z, cpu.a == 0x00)
+	cpu.setFlag(N, cpu.a&0x80 != 0)
+	return 1
 }
 
-func (cpu *Cpu) AND() uint8 {
-	// AND implementation
-	return 0
+// Addition operation
+func (cpu *Cpu) ADC() uint8 {
+	cpu.fetch()
+	temp := uint16(cpu.a + cpu.fetched + cpu.getFlag(C))
+	cpu.setFlag(C, temp > 255)
+	cpu.setFlag(Z, (temp&0x00FF) == 0)
+	cpu.setFlag(V, ((^(uint16(cpu.a)^uint16(cpu.fetched))&(uint16(cpu.a)^uint16(temp)))&0x0080) != 0)
+	cpu.setFlag(N, temp&0x80 != 0)
+	return 1
 }
 
 func (cpu *Cpu) ASL() uint8 {
@@ -25,18 +35,51 @@ func (cpu *Cpu) ASL() uint8 {
 	return 0
 }
 
-func (cpu *Cpu) BCC() uint8 {
-	// BCC implementation
-	return 0
-}
-
+// Branch if carry bit is set
 func (cpu *Cpu) BCS() uint8 {
-	// BCS implementation
+	if cpu.getFlag(C) == 1 {
+		cpu.cycles++
+		cpu.addr_abs = cpu.pc + cpu.addr_rel
+
+		if (cpu.addr_abs & 0xFF00) != (cpu.pc & 0xFF00) {
+			cpu.cycles++
+		}
+
+		cpu.pc = cpu.addr_abs
+	}
+
 	return 0
 }
 
+// Branch if carry bit is clear
+func (cpu *Cpu) BCC() uint8 {
+	if cpu.getFlag(C) == 0 {
+		cpu.cycles++
+		cpu.addr_abs = cpu.pc + cpu.addr_rel
+
+		if (cpu.addr_abs & 0xFF00) != (cpu.pc & 0xFF00) {
+			cpu.cycles++
+		}
+
+		cpu.pc = cpu.addr_abs
+	}
+
+	return 0
+}
+
+// Branch if output value of any instruction result is equal to 0
 func (cpu *Cpu) BEQ() uint8 {
-	// BEQ implementation
+	if cpu.getFlag(Z) == 1 {
+		cpu.cycles++
+		cpu.addr_abs = cpu.pc + cpu.addr_rel
+
+		if (cpu.addr_abs & 0xFF00) != (cpu.pc & 0xFF00) {
+			cpu.cycles++
+		}
+
+		cpu.pc = cpu.addr_abs
+	}
+
 	return 0
 }
 
@@ -45,18 +88,51 @@ func (cpu *Cpu) BIT() uint8 {
 	return 0
 }
 
+// Branch if negative
 func (cpu *Cpu) BMI() uint8 {
-	// BMI implementation
+	if cpu.getFlag(N) == 1 {
+		cpu.cycles++
+		cpu.addr_abs = cpu.pc + cpu.addr_rel
+
+		if (cpu.addr_abs & 0xFF00) != (cpu.pc & 0xFF00) {
+			cpu.cycles++
+		}
+
+		cpu.pc = cpu.addr_abs
+	}
+
 	return 0
 }
 
+// BEQ's opposite (Branch if not equal)
 func (cpu *Cpu) BNE() uint8 {
-	// BNE implementation
+	if cpu.getFlag(Z) == 0 {
+		cpu.cycles++
+		cpu.addr_abs = cpu.pc + cpu.addr_rel
+
+		if (cpu.addr_abs & 0xFF00) != (cpu.pc & 0xFF00) {
+			cpu.cycles++
+		}
+
+		cpu.pc = cpu.addr_abs
+	}
+
 	return 0
 }
 
+// BMI'S opposite (Branch if positive)
 func (cpu *Cpu) BPL() uint8 {
-	// BPL implementation
+	if cpu.getFlag(N) == 0 {
+		cpu.cycles++
+		cpu.addr_abs = cpu.pc + cpu.addr_rel
+
+		if (cpu.addr_abs & 0xFF00) != (cpu.pc & 0xFF00) {
+			cpu.cycles++
+		}
+
+		cpu.pc = cpu.addr_abs
+	}
+
 	return 0
 }
 
@@ -65,33 +141,59 @@ func (cpu *Cpu) BRK() uint8 {
 	return 0
 }
 
+// Branch if overflow is clear
 func (cpu *Cpu) BVC() uint8 {
-	// BVC implementation
+	if cpu.getFlag(V) == 0 {
+		cpu.cycles++
+		cpu.addr_abs = cpu.pc + cpu.addr_rel
+
+		if (cpu.addr_abs & 0xFF00) != (cpu.pc & 0xFF00) {
+			cpu.cycles++
+		}
+
+		cpu.pc = cpu.addr_abs
+	}
+
 	return 0
 }
 
+// Branch if overflow is set
 func (cpu *Cpu) BVS() uint8 {
-	// BVS implementation
+	if cpu.getFlag(V) == 1 {
+		cpu.cycles++
+		cpu.addr_abs = cpu.pc + cpu.addr_rel
+
+		if (cpu.addr_abs & 0xFF00) != (cpu.pc & 0xFF00) {
+			cpu.cycles++
+		}
+
+		cpu.pc = cpu.addr_abs
+	}
+
 	return 0
 }
 
+// Clear Carry flag
 func (cpu *Cpu) CLC() uint8 {
-	// CLC implementation
+	cpu.setFlag(C, false)
 	return 0
 }
 
+// Clear Decimal flag
 func (cpu *Cpu) CLD() uint8 {
-	// CLD implementation
+	cpu.setFlag(D, false)
 	return 0
 }
 
+// Clear Disable Interrupt flag
 func (cpu *Cpu) CLI() uint8 {
-	// CLI implementation
+	cpu.setFlag(I, false)
 	return 0
 }
 
+// Clear Overflow Flag
 func (cpu *Cpu) CLV() uint8 {
-	// CLV implementation
+	cpu.setFlag(V, false)
 	return 0
 }
 
@@ -225,9 +327,17 @@ func (cpu *Cpu) RTS() uint8 {
 	return 0
 }
 
+// Subtraction implementation
 func (cpu *Cpu) SBC() uint8 {
-	// SBC implementation
-	return 0
+	cpu.fetch()
+	value := uint16(cpu.fetched) ^ 0x00FF
+	temp := uint16(cpu.a) + value + uint16(cpu.getFlag(C))
+	cpu.setFlag(C, temp&0xFF00 != 0)
+	cpu.setFlag(Z, temp&0x00FF == 0)
+	cpu.setFlag(V, (temp^uint16(cpu.a))&(temp^value)&0x0080 != 0)
+	cpu.setFlag(N, temp&0x0080 != 0)
+	cpu.a = uint8(temp & 0x00FF) // might need rechecking
+	return 1
 }
 
 func (cpu *Cpu) SEC() uint8 {

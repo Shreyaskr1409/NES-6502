@@ -1,6 +1,9 @@
 package cpu6502
 
-import "NES_Emulator/bus"
+import (
+	"NES_Emulator/bus"
+	"fmt"
+)
 
 type Cpu struct {
 	// Registers
@@ -82,5 +85,9 @@ func (cpu *Cpu) getFlag(flag uint8) uint8 {
 func (cpu *Cpu) setFlag(flag uint8, value bool) {}
 
 func (cpu *Cpu) fetch() uint8 {
-	return 0x0000
+	// Compare the memory addresses of functions
+	if fmt.Sprintf("%p", cpu.lookup[cpu.opcode].addrmode) != fmt.Sprintf("%p", cpu.IMP) {
+		cpu.fetched = cpu.bus.Read(cpu.addr_abs, false) // Pass false as the default value
+	}
+	return cpu.fetched
 }

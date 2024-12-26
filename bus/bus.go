@@ -1,15 +1,18 @@
 package bus
 
-import "NES_Emulator/cpu6502"
+type CpuInterface interface {
+	ConnectBus(bus *Bus)
+	getFlag(flag uint8) uint8
+}
 
 type Bus struct {
-	*cpu6502.Cpu
+	Cpu CpuInterface
 	RAM [64 * 1024]byte
 }
 
-func NewBus() *Bus {
+func NewBus(Cpu CpuInterface) *Bus {
 	bus := &Bus{
-		Cpu: &cpu6502.Cpu{},
+		Cpu: Cpu,
 	}
 	for i := range bus.RAM {
 		bus.RAM[i] = 0x00
