@@ -287,8 +287,10 @@ func (cpu *Cpu) ORA() uint8 {
 	return 0
 }
 
+// Push accumulator to the stack
 func (cpu *Cpu) PHA() uint8 {
-	// PHA implementation
+	cpu.write(0x0100+uint16(cpu.stkp), cpu.a)
+	cpu.stkp--
 	return 0
 }
 
@@ -297,8 +299,12 @@ func (cpu *Cpu) PHP() uint8 {
 	return 0
 }
 
+// Pop accumulator from stack
 func (cpu *Cpu) PLA() uint8 {
-	// PLA implementation
+	cpu.stkp++
+	cpu.a = cpu.read(0x0100 + uint16(cpu.stkp))
+	cpu.setFlag(Z, cpu.a == 0x00)
+	cpu.setFlag(N, cpu.a&0x80 != 0)
 	return 0
 }
 
@@ -317,8 +323,17 @@ func (cpu *Cpu) ROR() uint8 {
 	return 0
 }
 
+// Return from interrupt
 func (cpu *Cpu) RTI() uint8 {
-	// RTI implementation
+	cpu.stkp++
+	cpu.status = cpu.read(0x0100 + uint16(cpu.stkp))
+	cpu.status &= ^byte(B)
+	cpu.status &= ^byte(U)
+
+	cpu.stkp++
+	cpu.pc = uint16(cpu.read(0x0100+uint16(cpu.stkp))) << 8
+	cpu.stkp++
+	cpu.pc |= uint16(cpu.read(0x0100+uint16(cpu.stkp)) << 8)
 	return 0
 }
 
